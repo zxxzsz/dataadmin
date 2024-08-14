@@ -200,65 +200,88 @@
 
 // export default App;
 
+import _ from 'lodash';
 import React, { useState } from 'react';
-import { Diff, Hunk, parseDiff } from 'react-diff-view';
-import 'react-diff-view/style/index.css';
-
-const diffText = `
-diff --git a/file.json b/file.json
-index 83db48f..f5d1e67 100644
---- a/file.json
-+++ b/file.json
-@@ -1,7 +1,7 @@
- {
-   "name": "John",
--  "age": 30,
--  "city": "New York",
-+  "age": 31,
-+  "city": "Boston",
-   "postalCode": "10001"
- }
-`;
+import DiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 
 function App() {
-  const [clickedLine, setClickedLine] = useState(null);
+  const oldJson = {
+    name: "John",
+    age: 30,
+    address: {
+      city: "New York",
+      postalCode: "10001"
+    },
+    preferences: {
+      theme: "dark",
+      notifications: true
+    }
+  };
 
-  const [diff] = parseDiff(diffText);
+  const initialNewJson = {
+    name: "John",
+    age: 31,
+    address: {
+      city: "Boston",
+      postalCode: "10001"
+    },
+    preferences: {
+      theme: "light",
+      notifications: false
+    }
+  };
+
+  // 将 JSON 对象格式化为带有缩进的字符串
+  const [newJson, setNewJson] = useState(JSON.stringify(initialNewJson, null, 2));
+  const oldText = JSON.stringify(oldJson, null, 2);
+  // const newText = JSON.stringify(newJson, null, 2);
+  const targetDataList = []
+
+  const handleClick = (str) => {
+    const { value, lineNumber } = str
+    const targetInfo = targetDataList.find(item => item.lineNumber === lineNumber);
+    if (targetInfo) {
+      let obj = {};
+      value.forEach(item => {
+        try {
+          console.log(`{${item.value}}`);
+          const newObj = JSON.parse(`{${item.value.replace(',', '')}}`);
+          obj = Object.assign(obj, newObj);
+        } catch (error) {
+          console.log(error);
+        }
+      });
+      console.log(_.merge(newJson, obj));
+      console.log(JSON.stringify(_.merge(newJson, obj), null, 2));
+      setNewJson(JSON.stringify(_.merge(JSON.parse(newJson), obj), null, 2))
+    }
+  }
+
+  const renderGutter = (str) => {
+    console.log(str);
+    const { type, prefix } = str;
+    prefix === 'R' && targetDataList.push(str);
+    return (
+      <td className='flex items-center'>
+        {prefix === 'L' && type !== 0 && <span style={{ marginLeft: '5px', color: 'red' }} onClick={() => handleClick(str)}>→</span>}
+      </td>
+    )
+  }
 
   return (
-    <div>
-      <h2>React Diff Viewer with Gutter Button</h2>
-      <Diff viewType="split" diffType="modify" hunks={diff.hunks} renderGutter={renderGutter}>
-        {(hunks) =>
-          hunks.map((hunk) => (
-            <Hunk key={hunk.content} hunk={hunk} />
-          ))
-        }
-      </Diff>
-      {clickedLine && <div>Line {clickedLine} clicked!</div>}
+    <div style={{ padding: '20px' }}>
+      <h2>JSON Diff Viewer</h2>
+      <DiffViewer
+        oldValue={oldText}
+        newValue={newJson}
+        splitView={true} // 分屏视图
+        renderGutter={renderGutter}
+        compareMethod={DiffMethod.LINES} // 使用按行比较
+      // hideLineNumbers={false} // 显示行号
+      // extraLinesSurroundingDiff={2} // 在差异周围显示额外的行
+      />
     </div>
   );
-
-  function renderGutter({ change }) {
-    const { lineNumber: number, newLineNumber, oldLineNumber, type } = change;
-    const lineNumber =  type === "normal" ? newLineNumber || oldLineNumber : number; // 获取当前行的行号
-
-    return (
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span>{lineNumber}</span>
-        {type !== "normal" && <button
-          style={{ marginLeft: '10px', cursor: 'pointer' }}
-          onClick={() => handleButtonClick(lineNumber)}
-        >
-          →
-        </button>}
-      </div>
-    );
-  }
-
-  function handleButtonClick(lineNumber) {
-    setClickedLine(lineNumber); // 设置点击的行号
-  }
 }
 
 export default App;
