@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react';
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
@@ -8,31 +8,37 @@ import path from "path"
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/dataadmin',
-  plugins: [
-    react(),
-    // monacoEditorPlugin.default({
-    //   // 插件配置
-    //   languageWorkers: ['editorWorkerService', 'css', 'html', 'json', 'javascript'],
-    //   // languageWorkers: ['editorWorkerService', 'javascript','typescript', 'css', 'html', 'json']
-    // })
-  ],
-  css: {
-    postcss: {
-      plugins: [
-        tailwindcss,
-        autoprefixer,
-      ]
-    }
-  },
-  server: {
-    host: 'localhost',
-    hmr: true
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src')
-    }
-  },
-
+    base: '/dataadmin',
+    plugins: [
+        react(),
+    ],
+    css: {
+        postcss: {
+            plugins: [
+                tailwindcss,
+                autoprefixer,
+            ]
+        }
+    },
+    server: {
+        host: 'localhost',
+        hmr: true,
+        proxy: {
+            "/dataAdminApi": {
+                target: 'https://66c05df1ba6f27ca9a5668c7.mockapi.io/dataAdminApi',
+                changeOrigin: true,
+                // secure: false,
+                logLevel: 'info',
+                rewrite: (path) => {
+                    console.log(path.replace(/^\/dataAdminApi/, ''))
+                    return path.replace(/^\/dataAdminApi/, '')
+                }
+            }
+        },
+    },
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, './src')
+        }
+    },
 })
